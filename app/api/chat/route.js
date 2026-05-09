@@ -2,20 +2,17 @@ import { NextResponse } from 'next/server';
 
 export async function POST(req) {
   try {
-    // Vercel Environment Variables'dan API key'i çekiyoruz
     const apiKey = process.env.GROQ_API_KEY;
 
     if (!apiKey) {
       return NextResponse.json(
-        { error: "API anahtarı bulunamadı. Lütfen Vercel panelinden GROQ_API_KEY ekleyin." },
+        { error: "API anahtarı bulunamadı. Vercel'den GROQ_API_KEY ekleyip Redeploy yapın." },
         { status: 500 }
       );
     }
 
-    // Frontend'den gelen mesajları alıyoruz
     const { messages } = await req.json();
 
-    // Groq API'ye istek gönderiyoruz
     const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -23,7 +20,7 @@ export async function POST(req) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "llama-3.3-70b-versatile", // En güçlü ve dengeli modellerden biri
+        model: "llama-3.3-70b-versatile",
         messages: messages,
         temperature: 0.7,
         max_tokens: 1024,
@@ -34,19 +31,23 @@ export async function POST(req) {
 
     if (!response.ok) {
       return NextResponse.json(
-        { error: data.error?.message || "Groq API tarafında bir hata oluştu." },
+        { error: data.error?.message || "Groq tarafında bir hata oluştu." },
         { status: response.status }
       );
     }
 
-    // Başarılı yanıtı döndürüyoruz
-    console.log("Groq'tan gelen veri:", JSON.stringify(data, null, 2));
-    return NextResponse.json(data);
+    // --- KRİTİK DÜZENLEME BURADA ---
+    // Groq'un karmaşık yapısını (choices[0].message.content) temizleyip 
+    // sadece "text" olarak frontend'e gönderiyoruz.
+    const cleanText = data.choices[0]?.message?.content || "";
+
+    return NextResponse.json({ text: cleanText });
+    // -------------------------------
 
   } catch (error) {
     console.error("Hata:", error);
     return NextResponse.json(
-      { error: "Sunucu tarafında beklenmedik bir hata oluştu." },
+      { error: "Sunucu hatası oluştu." },
       { status: 500 }
     );
   }
