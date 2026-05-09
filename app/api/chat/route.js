@@ -40,6 +40,7 @@ export async function POST(req) {
     }
 
     // Başarılı yanıtı döndürüyoruz
+    console.log("Groq'tan gelen veri:", JSON.stringify(data, null, 2));
     return NextResponse.json(data);
 
   } catch (error) {
